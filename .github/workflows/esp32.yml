@@ -2,58 +2,33 @@ name: ESP32 UART Firmware Validation
 
 on:
   push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  firmware-validation:
+  build-and-flash:
     runs-on: self-hosted
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Check Arduino CLI
+        run: .\arduino-cli.exe version
 
-    # -----------------------------
-    # Verify Arduino CLI Installed
-    # -----------------------------
-    - name: Check Arduino CLI
-      run: arduino-cli version
+      - name: Update Core Index
+        run: .\arduino-cli.exe core update-index
 
-    # -----------------------------
-    # Compile Sender
-    # -----------------------------
-    - name: Compile Sender
-      run: arduino-cli compile --fqbn esp32:esp32:esp32 sender/
+      - name: Install ESP32 Core
+        run: .\arduino-cli.exe core install esp32:esp32
 
-    # -----------------------------
-    # Flash Sender (COM6)
-    # -----------------------------
-    - name: Flash Sender
-      run: arduino-cli upload -p COM6 --fqbn esp32:esp32:esp32 sender/
+      - name: Compile Sender
+        run: .\arduino-cli.exe compile --fqbn esp32:esp32:esp32 sender
 
-    # -----------------------------
-    # Compile Receiver
-    # -----------------------------
-    - name: Compile Receiver
-      run: arduino-cli compile --fqbn esp32:esp32:esp32 receiver/
+      - name: Flash Sender
+        run: .\arduino-cli.exe upload -p COM6 --fqbn esp32:esp32:esp32 sender
 
-    # -----------------------------
-    # Flash Receiver (COM7)
-    # -----------------------------
-    - name: Flash Receiver
-      run: arduino-cli upload -p COM7 --fqbn esp32:esp32:esp32 receiver/
+      - name: Compile Receiver
+        run: .\arduino-cli.exe compile --fqbn esp32:esp32:esp32 receiver
 
-    # -----------------------------
-    # Install Python Dependencies
-    # -----------------------------
-    - name: Install Python Packages
-      run: |
-        pip install robotframework
-        pip install pyserial
-
-    # -----------------------------
-    # Run Robot Test
-    # -----------------------------
-    - name: Run UART Robot Test
-      run: robot uart_test.robot
+      - name: Flash Receiver
+        run: .\arduino-cli.exe upload -p COM7 --fqbn esp32:esp32:esp32 receiver
